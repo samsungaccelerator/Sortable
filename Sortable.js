@@ -357,10 +357,6 @@
 						evt.preventDefault();
 					}
 
-					_on(document, 'mouseup', this._onDrop);
-					_on(document, 'touchend', this._onDrop);
-					_on(document, 'touchcancel', this._onDrop);
-
 					_on(dragEl, 'dragend', this);
 					_on(rootEl, 'dragstart', this._onDragStart);
 
@@ -377,6 +373,10 @@
 					} catch (err) {
 					}
 				}.bind(this), this.options.delay);
+
+				_on(document, 'mouseup', this._onDrop);
+				_on(document, 'touchend', this._onDrop);
+				_on(document, 'touchcancel', this._onDrop);
 
 				_on(document, 'mousemove', cancelTimeout);
 				_on(document, 'mouseup', cancelTimeout);
