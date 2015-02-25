@@ -172,6 +172,7 @@
 		var defaults = {
 			group: Math.random(),
 			sort: true,
+			delay: 0,
 			disabled: false,
 			store: null,
 			handle: null,
@@ -263,13 +264,25 @@
 
 
 		_onTapStart: function (/**Event|TouchEvent*/evt) {
+			function cancelTimeout () {
+				if (timeoutId) {
+					clearTimeout(timeoutId);
+				}
+				_off(document, 'mousemove', cancelTimeout);
+				_off(document, 'mouseup', cancelTimeout);
+				_off(document, 'touchmove', cancelTimeout);
+				_off(document, 'touchend', cancelTimeout);
+				_off(document, 'touchcancel', cancelTimeout);
+			}
+
 			var type = evt.type,
 				touch = evt.touches && evt.touches[0],
 				target = (touch || evt).target,
 				originalTarget = target,
 				options =  this.options,
 				el = this.el,
-				filter = options.filter;
+				filter = options.filter,
+				timeoutId;
 
 			if (type === 'mousedown' && evt.button !== 0 || options.disabled) {
 				return; // only left button or enabled
@@ -323,44 +336,53 @@
 				nextEl = dragEl.nextSibling;
 				activeGroup = this.options.group;
 
-				dragEl.draggable = true;
+				timeoutId = setTimeout(function () {
+					timeoutId = null;
+					dragEl.draggable = true;
 
-				// Disable "draggable"
-				options.ignore.split(',').forEach(function (criteria) {
-					_find(target, criteria.trim(), _disableDraggable);
-				});
+					// Disable "draggable"
+					options.ignore.split(',').forEach(function (criteria) {
+						_find(target, criteria.trim(), _disableDraggable);
+					});
 
-				if (touch) {
-					// Touch device support
-					tapEvt = {
-						target: target,
-						clientX: touch.clientX,
-						clientY: touch.clientY
-					};
+					if (touch) {
+						// Touch device support
+						tapEvt = {
+							target: target,
+							clientX: touch.clientX,
+							clientY: touch.clientY
+						};
 
-					this._onDragStart(tapEvt, 'touch');
-					evt.preventDefault();
-				}
-
-				_on(document, 'mouseup', this._onDrop);
-				_on(document, 'touchend', this._onDrop);
-				_on(document, 'touchcancel', this._onDrop);
-
-				_on(dragEl, 'dragend', this);
-				_on(rootEl, 'dragstart', this._onDragStart);
-
-				if (!supportDraggable) {
-					this._onDragStart(tapEvt, true);
-				}
-
-				try {
-					if (document.selection) {
-						document.selection.empty();
-					} else {
-						window.getSelection().removeAllRanges();
+						this._onDragStart(tapEvt, 'touch');
+						evt.preventDefault();
 					}
-				} catch (err) {
-				}
+
+					_on(document, 'mouseup', this._onDrop);
+					_on(document, 'touchend', this._onDrop);
+					_on(document, 'touchcancel', this._onDrop);
+
+					_on(dragEl, 'dragend', this);
+					_on(rootEl, 'dragstart', this._onDragStart);
+
+					if (!supportDraggable) {
+						this._onDragStart(tapEvt, true);
+					}
+
+					try {
+						if (document.selection) {
+							document.selection.empty();
+						} else {
+							window.getSelection().removeAllRanges();
+						}
+					} catch (err) {
+					}
+				}.bind(this), this.options.delay);
+
+				_on(document, 'mousemove', cancelTimeout);
+				_on(document, 'mouseup', cancelTimeout);
+				_on(document, 'touchmove', cancelTimeout);
+				_on(document, 'touchend', cancelTimeout);
+				_on(document, 'touchcancel', cancelTimeout);
 			}
 		},
 
